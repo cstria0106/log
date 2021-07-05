@@ -3,8 +3,6 @@ use crate::log::Log;
 use crate::logger::Logger;
 
 use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::Duration;
 
 pub struct MyLoggerService<T>
 where
