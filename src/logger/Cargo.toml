@@ -8,6 +8,7 @@ version = "0.1.0"
 [dependencies]
 async-trait = "0.1.50"
 chrono = "0.4.19"
+colored = "2.0.0"
 flate2 = "1.0.20"
 prost = "0.7.0"
 rust-s3 = "0.26.4"

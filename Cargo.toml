@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "src/reporter",
-    "src/logger"
+  "src/reporter",
+  "src/logger",
 ]
