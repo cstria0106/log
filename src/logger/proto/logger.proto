@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package logger;
+
+service LoggerService {
+    rpc Log(LogRequest) returns (LogResponse);
+}
+
+message LogRequest {
+    string message = 1;
+}
+
+message LogResponse {}

@@ -1,21 +1,49 @@
 pub mod console_logger;
 pub mod log;
 pub mod logger;
+pub mod rpc;
 pub mod s3_logger;
+pub mod grpc {
+    tonic::include_proto!("logger");
+}
 
-use std::io::stdin;
-
-use logger::Logger;
+use rpc::MyLoggerService;
 use s3_logger::S3Logger;
 
-use crate::log::Log;
-fn main() {
-    let mut logger = S3Logger::new();
+use s3::{creds::Credentials, Bucket};
+use std::{fs::File, io::BufReader};
 
-    for _ in 0..40960 {
-        logger.log(Log::from_string(&"Hello, world!".to_string()));
-    } 
+/// Configuration struct.
+#[derive(serde::Serialize, serde::Deserialize)]
+struct Config {
+    id: String,
+    key: String,
+    bucket: String,
+}
 
-    let mut s = String::new();
-    stdin().read_line(&mut s).unwrap();
+#[tokio::main]
+async fn main() {
+    // Load configuration from "config.json".
+    let config: Config =
+        serde_json::from_reader(BufReader::new(File::open("config.json").unwrap())).unwrap();
+
+    // Define S3 bucket.
+    let bucket = Bucket::new(
+        &config.bucket,
+        "ap-northeast-2".parse().unwrap(),
+        Credentials::new(Some(&config.id), Some(&config.key), None, None, None).unwrap(),
+    )
+    .unwrap();
+
+    // Use S3 logger.
+    let logger = S3Logger::new(bucket, Some(true));
+
+    // Start tonic server and wait forever.
+    tonic::transport::Server::builder()
+        .add_service(grpc::logger_service_server::LoggerServiceServer::new(
+            MyLoggerService::new(logger),
+        ))
+        .serve("[::1]:50051".parse().unwrap())
+        .await
+        .unwrap();
 }
