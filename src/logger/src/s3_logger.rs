@@ -1,10 +1,10 @@
-use std::io::{prelude::*, Error};
+use std::io::prelude::*;
 
 use chrono::{DateTime, Utc};
 use colored::*;
 use flate2::write::GzEncoder;
 use flate2::Compression;
-use s3::{Bucket, S3Error};
+use s3::Bucket;
 
 use crate::{log::Log, logger::Logger};
 
@@ -16,14 +16,16 @@ pub struct S3Logger {
 
 #[derive(Debug)]
 pub enum UploadError {
-    CompressionError(Error),
-    S3Error(S3Error),
+    CompressionError(String),
+    S3Error(String),
 }
 
 pub type UploadResult = Result<Option<String>, UploadError>;
 
 impl S3Logger {
     pub fn new(bucket: Bucket, stdout: Option<bool>) -> S3Logger {
+        // bucket.list_blocking("".to_string(), None).unwrap();
+
         S3Logger {
             memory_logs: Vec::with_capacity(40960),
             stdout: stdout.unwrap_or(false),
@@ -45,13 +47,21 @@ impl S3Logger {
             for log in self.memory_logs.iter() {
                 encoder
                     .write_fmt(format_args!("{}\n", log.message()))
-                    .map_err(|e| UploadError::CompressionError(e))?;
+                    .map_err(|e| {
+                        UploadError::CompressionError(format!(
+                            "error occured while compressing: {}",
+                            e
+                        ))
+                    })?;
             }
 
-            // Encode.
-            let encoded = encoder
-                .finish()
-                .map_err(|e| UploadError::CompressionError(e))?;
+            // Complete.
+            let encoded = encoder.finish().map_err(|e| {
+                UploadError::CompressionError(format!(
+                    "error occured while completing encoding: {}",
+                    e
+                ))
+            })?;
 
             // Format filename.
             let filename = last_log.timestamp().format("%F.log.gz").to_string();
@@ -60,8 +70,16 @@ impl S3Logger {
             let (_, code) = self
                 .bucket
                 .put_object_blocking(filename.clone(), &encoded)
-                .map_err(|e| UploadError::S3Error(e))?; // TODO: It does not throw error actually
+                .map_err(|e| {
+                    UploadError::S3Error(format!("error occured while uploading S3: {}", e))
+                })?;
 
+            if code != 200 {
+                return Err(UploadError::S3Error(format!(
+                    "error occured while uploading S3: status code is {}",
+                    code
+                )));
+            }
             return Ok(Some(filename));
         }
 
@@ -95,6 +113,10 @@ impl Logger for S3Logger {
 
             // If last log is old, then upload to S3 and clear logs stored in memory.
             if is_after_a_day(time, now) {
+                if self.stdout {
+                    println!("{}", "uploading...".bright_black());
+                }
+
                 let result = self.upload();
                 self.memory_logs.clear();
                 result
@@ -113,8 +135,6 @@ impl Logger for S3Logger {
                 log.timestamp().format("%F %T").to_string().bright_black()
             );
         }
-
-        println!("{:?}", upload_result);
 
         // Push logs into memory.
         self.memory_logs.push(log);
