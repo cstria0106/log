@@ -75,11 +75,14 @@ impl Logger for S3Logger {
     fn log(&mut self, log: Log) {
         // check that number of days in duration between a and b is more than one day.
         // fn is_after_a_day(a: &DateTime<Utc>, b: &DateTime<Utc>) -> bool {
-        //     (*a - *b).num_days() > 0
+        //     (a.with_timezone(&Local).date() - b.with_timezone(&Local).date())
+        //         .num_days()
+        //         .abs()
+        //         > 0
         // }
 
         // temporary check function for development.
-        fn is_after_a_day(a: &DateTime<Utc>, b: &DateTime<Utc>) -> bool {
+        fn is_after_a_day(_: &DateTime<Utc>, _: &DateTime<Utc>) -> bool {
             true
         }
 
