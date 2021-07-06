@@ -54,7 +54,7 @@ impl S3Logger {
                 .map_err(|e| UploadError::CompressionError(e))?;
 
             // Format filename.
-            let filename = last_log.timestamp().format("%Y%m%d.log.gz").to_string();
+            let filename = last_log.timestamp().format("%F.log.gz").to_string();
 
             // Upload.
             let (_, code) = self
