@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package logger;
+
+service LoggerService {
+    rpc Log(LogRequest) returns (LogResponse);
+}
+
+message LogRequest {
+    enum Level {
+        INFO = 0;
+        WARNING = 1;
+        ERROR = 2;
+        DEBUG = 3;
+    }
+
+    Level level = 1;
+    string message = 2;
+    repeated string other = 3;
+}
+
+message LogResponse {}
