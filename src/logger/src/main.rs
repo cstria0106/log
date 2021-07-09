@@ -56,11 +56,14 @@ async fn main() {
 
     // Log for test.
     for logger in loggers.iter_mut() {
-        logger.log(Log::new(
-            LogLevel::Info,
-            &"Now starting logging server.".to_string(),
-            None,
-        ));
+        logger.log(
+            Log::new(
+                LogLevel::Info,
+                &"Now starting logging server.".to_string(),
+                None,
+            )
+            .0,
+        );
     }
 
     // Start tonic server and wait forever.

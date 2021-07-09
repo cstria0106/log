@@ -2,5 +2,5 @@
 members = [
   "src/monitor",
   "src/logger",
-  "src/toml",
+  "src/toml-highlighter",
 ]

@@ -27,7 +27,7 @@ impl LoggerService for MyLoggerService {
         for logger in self.loggers.lock().unwrap().iter_mut() {
             let request = request.get_ref();
 
-            logger.as_mut().log(Log::new(
+            let (log, _) = Log::new(
                 match &request.level() {
                     Level::Info => LogLevel::Info,
                     Level::Warning => LogLevel::Warning,
@@ -40,7 +40,9 @@ impl LoggerService for MyLoggerService {
                 } else {
                     None
                 },
-            ));
+            );
+
+            logger.as_mut().log(log);
         }
 
         Ok(tonic::Response::new(LogResponse::default()))

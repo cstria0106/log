@@ -1,4 +1,4 @@
-use toml::Highlighter;
+use toml_highlighter::Highlighter;
 
 use crate::{log::Log, logger::Logger};
 
