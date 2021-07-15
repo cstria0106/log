@@ -1,4 +1,4 @@
-use crate::grpc::{ping_service_server::PingService, PingRequest, PingResponse};
+use log::grpc::{ping_service_server::PingService, PingRequest, PingResponse};
 
 pub struct MyPingService {}
 

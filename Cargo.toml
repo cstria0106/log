@@ -1,6 +1,7 @@
 [workspace]
 members = [
+  "src/log",
+  "src/server",
   "src/monitor",
-  "src/logger",
   "src/toml-highlighter",
 ]

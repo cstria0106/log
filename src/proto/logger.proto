@@ -4,19 +4,33 @@ package logger;
 
 service LoggerService {
     rpc Log(LogRequest) returns (LogResponse);
+    rpc Get(GetRequest) returns (GetResponse);
 }
 
-message LogRequest {
-    enum Level {
-        INFO = 0;
-        WARNING = 1;
-        ERROR = 2;
-        DEBUG = 3;
-    }
+enum Level {
+    INFO = 0;
+    WARNING = 1;
+    ERROR = 2;
+    DEBUG = 3;
+}
 
+message Log {
     Level level = 1;
     string message = 2;
     repeated string other = 3;
+    string timestamp = 4;
+}
+
+message LogRequest {
+    Log log = 1;
 }
 
 message LogResponse {}
+
+message GetRequest {
+    string date = 1;
+}
+
+message GetResponse {
+    repeated Log logs = 1;
+}

@@ -1,99 +1,100 @@
 use std::fmt::Display;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, NaiveDateTime, ParseError, TimeZone, Utc};
 use colored::*;
-use toml::{de::Error, Value};
 use toml_highlighter::Highlighter;
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub enum LogLevel {
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub enum Level {
     Info,
     Warning,
     Error,
     Debug,
 }
 
-impl Display for LogLevel {
+impl Display for Level {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Debug::fmt(self, f)
     }
 }
 
-impl LogLevel {
+impl Level {
     fn color(&self) -> &str {
         match self {
-            LogLevel::Info => "cyan",
-            LogLevel::Warning => "yellow",
-            LogLevel::Error => "red",
-            LogLevel::Debug => "green",
+            Level::Info => "cyan",
+            Level::Warning => "yellow",
+            Level::Error => "red",
+            Level::Debug => "green",
         }
     }
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Log {
-    level: LogLevel,
+    level: Level,
     message: String,
+    other: Option<Vec<String>>,
     timestamp: DateTime<Utc>,
-    other: Option<Vec<toml::Value>>,
 }
 
 impl Log {
-    pub fn new(
-        level: LogLevel,
-        message: &String,
-        other: Option<Vec<String>>,
-    ) -> (Log, Vec<toml::de::Error>) {
-        let other = other.and_then(|other| {
-            Some(
-                other
-                    .iter()
-                    .map(|other| toml::from_str(other))
-                    .collect::<Vec<_>>(),
-            )
-        });
-
-        let (other_values, errors) = if let Some(other) = other {
-            let mut values: Vec<Value> = Vec::new();
-            let mut errors: Vec<Error> = Vec::new();
-
-            for other in other.into_iter() {
-                match other {
-                    Ok(value) => {
-                        values.push(value);
-                    }
-                    Err(e) => {
-                        errors.push(e);
-                    }
-                }
-            }
-
-            (Some(values), Some(errors))
-        } else {
-            (None, None)
-        };
-
-        (
-            Log {
-                level,
-                message: message.clone(),
-                timestamp: Utc::now(),
-                other: other_values,
+    pub fn from_grpc_log(log: &crate::grpc::Log) -> Result<Self, ParseError> {
+        Ok(Self::new(
+            match &log.level() {
+                crate::grpc::Level::Info => Level::Info,
+                crate::grpc::Level::Warning => Level::Warning,
+                crate::grpc::Level::Error => Level::Error,
+                crate::grpc::Level::Debug => Level::Debug,
             },
-            if let Some(errors) = errors {
-                errors
+            &log.message,
+            if log.other.len() > 0 {
+                Some(log.other.clone())
             } else {
-                Vec::new()
+                None
             },
-        )
+            Utc.from_local_datetime(&NaiveDateTime::parse_from_str(&log.timestamp, "%F %T")?)
+                .unwrap(),
+        ))
     }
 
-    pub fn level(&self) -> &LogLevel {
+    pub fn to_grpc_log(&self) -> crate::grpc::Log {
+        crate::grpc::Log {
+            level: match self.level {
+                Level::Info => 0,
+                Level::Warning => 1,
+                Level::Error => 2,
+                Level::Debug => 3,
+            },
+            message: self.message.clone(),
+            other: self.other.clone().unwrap_or(Vec::new()),
+            timestamp: self.timestamp.format("%F %T").to_string(),
+        }
+    }
+
+    pub fn new(
+        level: Level,
+        message: &String,
+        other: Option<Vec<String>>,
+        timestamp: DateTime<Utc>,
+    ) -> Log {
+        Log {
+            level,
+            message: message.clone(),
+            other,
+            timestamp,
+        }
+    }
+
+    pub fn level(&self) -> &Level {
         &self.level
     }
 
     pub fn message(&self) -> &String {
         &self.message
+    }
+
+    pub fn other(&self) -> &Option<Vec<String>> {
+        &self.other
     }
 
     pub fn timestamp(&self) -> &DateTime<Utc> {
@@ -102,13 +103,14 @@ impl Log {
 
     pub fn to_pretty_string(&self, highlighter: &Highlighter) -> String {
         let message: String = self.message.split('\n').map(|line| line.trim()).collect();
+        let space_size = 10;
         let other: Option<Vec<String>> = {
             if let Some(other) = &self.other {
                 Some(
                     other
                         .iter()
                         .map(|other| -> String {
-                            let space = " ".repeat(10);
+                            let space = " ".repeat(space_size);
 
                             let lines: Vec<String> = other
                                 .to_string()
@@ -136,10 +138,11 @@ impl Log {
         });
 
         format!(
-            "{:>9} {} {}{}",
+            "{:>width$} {} {}{}",
             format!("[{}]", self.level.to_string().to_uppercase()).color(self.level.color()),
             message,
             self.timestamp
+                .with_timezone(&Local)
                 .format("%F %T")
                 .to_string()
                 .bright_black()
@@ -149,6 +152,7 @@ impl Log {
             } else {
                 "".to_string()
             },
+            width = space_size - 1
         )
     }
 }

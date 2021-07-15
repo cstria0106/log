@@ -3,6 +3,10 @@ edition = "2018"
 name = "toml-highlighter"
 version = "0.1.0"
 
+[lib]
+name = "toml_highlighter"
+path = "src/lib.rs"
+
 [dependencies]
 syntect = "4.5"
 
