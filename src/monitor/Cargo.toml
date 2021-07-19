@@ -4,5 +4,10 @@ name = "log-monitor"
 version = "0.1.0"
 
 [[bin]]
-name = "log_monitor"
+name = "log-monitor"
 path = "src/main.rs"
+
+[dependencies]
+clap = "2.33"
+serde = "1.0"
+toml = "0.5"

@@ -4,7 +4,7 @@ name = "log-server"
 version = "0.1.0"
 
 [[bin]]
-name = "log_server"
+name = "log-server"
 path = "src/main.rs"
 
 [dependencies]
