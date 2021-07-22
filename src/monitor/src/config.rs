@@ -2,8 +2,8 @@ use std::{fs, io::Read, process};
 
 use serde::Deserialize;
 
-#[derive(Deserialize)]
-struct Config {
+#[derive(Debug, Deserialize)]
+pub struct Config {
     ip: String,
     port: Option<u16>,
 }
@@ -13,24 +13,28 @@ impl Config {
         toml::from_str(toml)
     }
 
-    fn from_file(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let config_file = match fs::File::open(path) {
+    pub fn from_file(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let mut config_file = match fs::File::open(path) {
             Ok(file) => file,
             Err(e) => {
-                eprintln!("Could not open config file '{}': {}", path, e);
-                process::exit(1);
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("could not open config file: {}", e),
+                )));
             }
         };
 
         let metadata = config_file.metadata()?;
         if !metadata.is_file() {
-            eprintln!("'{}' is not a valid file", path);
-            process::exit(1);
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "it's not a valid file",
+            )));
         }
 
         let mut toml = String::new();
         config_file.read_to_string(&mut toml)?;
 
-        Self::from_str(&toml)
+        Self::from_str(&toml).map_err(|e| e.into())
     }
 }

@@ -62,7 +62,7 @@ async fn main() {
         &"Now starting logging server.".to_string(),
         None,
         Utc::now(),
-    ));
+    )).await;
 
     // Start tonic server and wait forever.
     tonic::transport::Server::builder()

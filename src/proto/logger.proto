@@ -5,6 +5,7 @@ package logger;
 service LoggerService {
     rpc Log(LogRequest) returns (LogResponse);
     rpc Get(GetRequest) returns (GetResponse);
+    rpc Follow(FollowRequest) returns (stream FollowResponse);
 }
 
 enum Level {
@@ -33,4 +34,10 @@ message GetRequest {
 
 message GetResponse {
     repeated Log logs = 1;
+}
+
+message FollowRequest {}
+
+message FollowResponse {
+    Log log = 1;
 }

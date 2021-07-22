@@ -1086,6 +1086,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio 1.8.1",
+ "tokio-stream",
  "toml",
  "toml-highlighter",
  "tonic",

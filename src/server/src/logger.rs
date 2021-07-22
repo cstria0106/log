@@ -4,11 +4,14 @@ use log::log::{Level, Log};
 
 use crate::device::{Device, DeviceError};
 
+type Follower = tokio::sync::mpsc::Sender<Log>;
+
 /// Logger holds log data for a day
 /// and write log into log devices.
 pub struct Logger {
     today_logs: Vec<Log>,
-    devices: Vec<Box<dyn Device + Send>>,
+    devices: Vec<Box<dyn Device + Send + Sync>>,
+    followers: Vec<(u64, Follower)>,
 }
 
 impl Logger {
@@ -16,20 +19,35 @@ impl Logger {
         Logger {
             today_logs: Vec::new(),
             devices: Vec::new(),
+            followers: Vec::new(),
         }
     }
 
     /// Add device and return itself.
-    pub fn add_device(mut self, device: Box<dyn Device + Send>) -> Self {
+    pub fn add_device(mut self, device: Box<dyn Device + Send + Sync>) -> Self {
         self.devices.push(device);
         self
     }
 
     /// Log in every devices and return occurred errors.
-    pub fn log(&mut self, log: Log) -> Vec<DeviceError> {
+    pub async fn log(&mut self, log: Log) -> Vec<DeviceError> {
         for device in self.devices.iter_mut() {
             device.log(&log);
         }
+
+        let mut disconnected: Vec<u64> = Vec::new();
+        for (id, follower) in self.followers.iter_mut() {
+            let follower = follower.clone();
+            let log = log.clone();
+            match follower.send(log).await {
+                Err(_) => {
+                    disconnected.push(*id);
+                }
+                _ => {}
+            };
+        }
+
+        self.followers.retain(|(id, _)| !disconnected.contains(id));
 
         /// Check that number of days in duration between a and b is more than one day.
         fn is_after_a_day(a: &DateTime<Utc>, b: &DateTime<Utc>) -> bool {
@@ -89,5 +107,10 @@ impl Logger {
             .iter()
             .filter_map(|device| device.get(date, levels).ok())
             .find_map(|device| device)
+    }
+
+    pub fn follow(&mut self, follower: Follower) {
+        self.followers
+            .push((self.followers.last().map_or(0, |(id, _)| id + 1), follower));
     }
 }

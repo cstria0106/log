@@ -2,11 +2,14 @@ use crate::logger::Logger;
 use chrono::{NaiveDate, TimeZone, Utc};
 use log::{
     grpc::{
-        logger_service_server::LoggerService, GetRequest, GetResponse, LogRequest, LogResponse,
+        logger_service_server::LoggerService, FollowResponse, GetRequest, GetResponse, LogRequest,
+        LogResponse,
     },
     log::Log,
 };
-use std::sync::{Arc, Mutex};
+use std::{pin::Pin, sync::Arc};
+use tokio::sync::Mutex;
+use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 
 pub struct MyLoggerService {
     logger: Arc<Mutex<Logger>>,
@@ -37,10 +40,7 @@ impl LoggerService for MyLoggerService {
         let log =
             Log::from_grpc_log(log).map_err(|e| tonic::Status::invalid_argument("bad format"))?;
 
-        self.logger
-            .lock()
-            .map_err(|_| tonic::Status::internal("unknown error"))?
-            .log(log);
+        let mut logger = self.logger.lock().await.log(log).await;
 
         Ok(tonic::Response::new(LogResponse::default()))
     }
@@ -64,10 +64,30 @@ impl LoggerService for MyLoggerService {
             logs: self
                 .logger
                 .lock()
-                .map_err(|_| tonic::Status::internal("unknown error"))?
+                .await
                 .get(&date, None)
                 .map(|logs| logs.iter().map(|log| log.to_grpc_log()).collect())
                 .unwrap_or(Vec::new()),
         }))
+    }
+
+    type FollowStream =
+        Pin<Box<dyn Stream<Item = Result<log::grpc::FollowResponse, tonic::Status>> + Send + Sync>>;
+
+    async fn follow(
+        &self,
+        _: tonic::Request<log::grpc::FollowRequest>,
+    ) -> Result<tonic::Response<Self::FollowStream>, tonic::Status> {
+        let (sender, receiver) = tokio::sync::mpsc::channel(4);
+
+        self.logger.lock().await.follow(sender);
+
+        Ok(tonic::Response::new(Box::pin(
+            ReceiverStream::new(receiver).map(|log| {
+                Ok(FollowResponse {
+                    log: Some(log.to_grpc_log()),
+                })
+            }),
+        )))
     }
 }

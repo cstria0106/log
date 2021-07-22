@@ -104,37 +104,23 @@ impl Log {
     pub fn to_pretty_string(&self, highlighter: &Highlighter) -> String {
         let message: String = self.message.split('\n').map(|line| line.trim()).collect();
         let space_size = 10;
-        let other: Option<Vec<String>> = {
-            if let Some(other) = &self.other {
-                Some(
-                    other
-                        .iter()
-                        .map(|other| -> String {
-                            let space = " ".repeat(space_size);
 
-                            let lines: Vec<String> = other
-                                .to_string()
-                                .trim()
-                                .split('\n')
-                                .map(|line| format!("{}{}", space, line))
-                                .collect();
+        let other: Option<Vec<String>> = self.other.as_ref().map(|other| {
+            other
+                .iter()
+                .map(|other| -> String {
+                    let space = " ".repeat(space_size);
 
-                            lines.join("\n")
-                        })
-                        .collect(),
-                )
-            } else {
-                None
-            }
-        };
+                    let lines: Vec<String> = other
+                        .to_string()
+                        .trim()
+                        .split('\n')
+                        .map(|line| format!("{}{}", space, highlighter.highlight(line)))
+                        .collect();
 
-        let other = other.and_then(|other: Vec<String>| -> Option<Vec<String>> {
-            Some(
-                other
-                    .iter()
-                    .map(|other| highlighter.highlight(other).to_string())
-                    .collect(),
-            )
+                    lines.join("\n")
+                })
+                .collect()
         });
 
         format!(
@@ -147,11 +133,7 @@ impl Log {
                 .to_string()
                 .bright_black()
                 .to_string(),
-            if let Some(other) = other {
-                format!("\n{}", other.join("\n"))
-            } else {
-                "".to_string()
-            },
+            other.map_or_else(|| "".to_string(), |other| format!("\n{}", other.join("\n"))),
             width = space_size - 1
         )
     }
