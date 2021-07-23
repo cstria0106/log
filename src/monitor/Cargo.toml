@@ -8,6 +8,7 @@ name = "log-monitor"
 path = "src/main.rs"
 
 [dependencies]
+chrono = "0.4"
 clap = "2.33"
 log = {path = "../log"}
 serde = "1.0"

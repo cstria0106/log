@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use chrono::{Date, Utc};
 use log::log::{Level, Log};
 use toml_highlighter::Highlighter;
@@ -16,16 +17,20 @@ impl ConsoleDevice {
     }
 }
 
+#[async_trait]
 impl Device for ConsoleDevice {
-    fn log(&mut self, log: &Log) {
+    /// Print log on console.
+    async fn log(&mut self, log: &Log) {
         println!("{}", log.to_pretty_string(&self.highlighter));
     }
 
-    fn store(&mut self, _: &Vec<Log>) -> device::Result<Option<String>> {
+    /// Do nothing.
+    async fn store(&mut self, _: &Vec<Log>) -> device::Result<Option<String>> {
         Ok(None)
     }
 
-    fn get(&self, _: &Date<Utc>, _: Option<&[Level]>) -> device::Result<Option<Vec<Log>>> {
+    /// Do nothing.
+    async fn get(&self, _: &Date<Utc>, _: Option<&[Level]>) -> device::Result<Option<Vec<Log>>> {
         Ok(None)
     }
 }

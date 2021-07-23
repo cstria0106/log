@@ -29,8 +29,7 @@ pub fn get_arguments() -> ArgMatches<'static> {
                         .value_name("DATE")
                         .help("Specified date to query")
                         .takes_value(true)
-                        .index(1)
-                        .required(true),
+                        .index(1),
                 ),
         )
         .get_matches()

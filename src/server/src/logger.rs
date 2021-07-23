@@ -1,5 +1,6 @@
 use chrono::{Date, DateTime, Local, Utc};
 
+use futures::{pin_mut, stream};
 use log::log::{Level, Log};
 
 use crate::device::{Device, DeviceError};
@@ -32,7 +33,7 @@ impl Logger {
     /// Log in every devices and return occurred errors.
     pub async fn log(&mut self, log: Log) -> Vec<DeviceError> {
         for device in self.devices.iter_mut() {
-            device.log(&log);
+            device.log(&log).await;
         }
 
         let mut disconnected: Vec<u64> = Vec::new();
@@ -57,18 +58,13 @@ impl Logger {
                 > 0
         }
 
-        // Temporary check function for development.
-        // fn is_after_a_day(_: &DateTime<Utc>, _: &DateTime<Utc>) -> bool {
-        //     true
-        // }
-
         // Get last log.
         let last_log = self.today_logs.last();
 
         // If this is not first log, check timestamp between last log and current log.
         let errors = if let Some(last_log) = last_log {
-            let time = last_log.timestamp();
-            let now = log.timestamp();
+            let time = &last_log.timestamp;
+            let now = &log.timestamp;
 
             // If last log is old, then store and clear logs stored in memory.
             let errors = if is_after_a_day(time, now) {
@@ -76,7 +72,7 @@ impl Logger {
 
                 for device in self.devices.iter_mut() {
                     // Store and collect device errors.
-                    if let Err(e) = device.store(&self.today_logs) {
+                    if let Err(e) = device.store(&self.today_logs).await {
                         errors.push(e);
                     }
                 }
@@ -98,15 +94,17 @@ impl Logger {
         errors
     }
 
-    pub fn get(&self, date: &Date<Utc>, levels: Option<&[Level]>) -> Option<Vec<Log>> {
+    pub async fn get(&self, date: &Date<Utc>, levels: Option<&[Level]>) -> Option<Vec<Log>> {
         if date == &Utc::now().date() {
             return Some(self.today_logs.clone());
         }
 
-        self.devices
-            .iter()
-            .filter_map(|device| device.get(date, levels).ok())
-            .find_map(|device| device)
+        use stream::StreamExt;
+        let s = stream::iter(&self.devices)
+            .filter_map(|device| async move { device.get(date, levels).await.unwrap() });
+
+        pin_mut!(s);
+        s.next().await
     }
 
     pub fn follow(&mut self, follower: Follower) {

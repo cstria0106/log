@@ -12,8 +12,10 @@ async-trait = "0.1"
 bincode = "1.3"
 chrono = "0.4"
 flate2 = "1.0"
+futures = "0.3"
 log = {path = "../log"}
-rust-s3 = "0.26"
+rusoto_core = "0.47"
+rusoto_s3 = "0.47"
 serde = {version = "1.0", features = ["derive"]}
 serde_json = "1.0"
 tokio = {version = "1.8", features = ["full"]}

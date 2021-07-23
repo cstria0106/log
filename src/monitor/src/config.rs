@@ -4,19 +4,11 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    ip: String,
-    port: Option<u16>,
+    pub ip: String,
+    pub port: Option<u16>,
 }
 
 impl Config {
-    pub fn ip(&self) -> &String {
-        &self.ip
-    }
-
-    pub fn port(&self) -> &Option<u16> {
-        &self.port
-    }
-
     fn from_str(toml: &str) -> Result<Self, toml::de::Error> {
         toml::from_str(toml)
     }

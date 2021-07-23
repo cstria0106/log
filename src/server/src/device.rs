@@ -1,8 +1,10 @@
+use async_trait::async_trait;
 use chrono::{Date, Utc};
 use log::log::{Level, Log};
 
 pub type Result<T> = std::result::Result<T, DeviceError>;
 
+#[derive(Debug)]
 pub struct DeviceError(String);
 
 impl DeviceError {
@@ -18,13 +20,14 @@ impl std::fmt::Display for DeviceError {
 }
 
 /// Abstract device for logging.
+#[async_trait]
 pub trait Device {
     /// Log.
-    fn log(&mut self, log: &Log);
+    async fn log(&mut self, log: &Log);
 
     /// Store memory logs.
-    fn store(&mut self, logs: &Vec<Log>) -> Result<Option<String>>;
+    async fn store(&mut self, logs: &Vec<Log>) -> Result<Option<String>>;
 
     // Get log by UTC date.
-    fn get(&self, date: &Date<Utc>, levels: Option<&[Level]>) -> Result<Option<Vec<Log>>>;
+    async fn get(&self, date: &Date<Utc>, levels: Option<&[Level]>) -> Result<Option<Vec<Log>>>;
 }

@@ -31,10 +31,10 @@ impl Level {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Log {
-    level: Level,
-    message: String,
-    other: Option<Vec<String>>,
-    timestamp: DateTime<Utc>,
+    pub level: Level,
+    pub message: String,
+    pub other: Option<Vec<String>>,
+    pub timestamp: DateTime<Utc>,
 }
 
 impl Log {
@@ -83,22 +83,6 @@ impl Log {
             other,
             timestamp,
         }
-    }
-
-    pub fn level(&self) -> &Level {
-        &self.level
-    }
-
-    pub fn message(&self) -> &String {
-        &self.message
-    }
-
-    pub fn other(&self) -> &Option<Vec<String>> {
-        &self.other
-    }
-
-    pub fn timestamp(&self) -> &DateTime<Utc> {
-        &self.timestamp
     }
 
     pub fn to_pretty_string(&self, highlighter: &Highlighter) -> String {

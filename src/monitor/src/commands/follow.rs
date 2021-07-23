@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use clap::ArgMatches;
 use log::{
     grpc::{logger_service_client::LoggerServiceClient, FollowRequest},
@@ -8,14 +6,11 @@ use log::{
 
 use crate::config::Config;
 
-pub async fn follow(
-    args: &ArgMatches<'_>,
-    config: &Config,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn follow(_: &ArgMatches<'_>, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     let mut client = LoggerServiceClient::connect(format!(
         "http://{}:{}",
-        config.ip(),
-        config.port().unwrap_or(50051)
+        config.ip,
+        config.port.unwrap_or(50051)
     ))
     .await?;
 

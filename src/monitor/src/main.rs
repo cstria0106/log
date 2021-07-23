@@ -4,6 +4,8 @@ mod monitor;
 
 #[path = "commands/follow.rs"]
 mod command_follow;
+#[path = "commands/list.rs"]
+mod command_list;
 
 use std::{error::Error, process};
 

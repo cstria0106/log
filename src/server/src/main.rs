@@ -7,10 +7,11 @@ use log::{
 use logger::Logger;
 use logger_rpc::MyLoggerService;
 use ping_rpc::MyPingService;
-use s3::{creds::Credentials, Bucket};
 use s3_device::S3Device;
-use std::{fs::File, io::BufReader};
 
+use crate::config::Config;
+
+mod config;
 #[path = "device/console_device.rs"]
 mod console_device;
 mod device;
@@ -22,42 +23,21 @@ mod ping_rpc;
 #[path = "device/s3_device.rs"]
 mod s3_device;
 
-/// Configuration struct.
-#[derive(serde::Serialize, serde::Deserialize)]
-struct Config {
-    id: String,
-    key: String,
-    bucket: String,
-}
-
 #[tokio::main]
 async fn main() {
-    println!("wow");
-
-    // Load configuration from "config.json".
-    let config: Config = serde_json::from_reader(BufReader::new(
-        File::open("config.json").expect("can't open configuration file"),
-    ))
-    .expect("can't read configuration file");
-
-    // Define S3 bucket.
-    let bucket = Bucket::new(
-        &config.bucket,
-        "ap-northeast-2".parse().unwrap(),
-        Credentials::new(Some(&config.id), Some(&config.key), None, None, None).unwrap(),
-    )
-    .unwrap();
-
-    // Test S3 bucket.
-    bucket.list_blocking(String::new(), None).unwrap();
+    let config = Config::from_file("config.json").expect("could not read config");
 
     // Create logger.
     let mut logger = Logger::new()
-        .add_device(Box::new(S3Device::new(bucket)))
+        .add_device(Box::new(
+            S3Device::new(&config)
+                .await
+                .expect("could not create S3 device"),
+        ))
         .add_device(Box::new(ConsoleDevice::new()));
 
     // Log for test.
-    logger
+    let errors = logger
         .log(Log::new(
             Level::Info,
             &"Now starting logging server.".to_string(),
@@ -66,11 +46,27 @@ async fn main() {
         ))
         .await;
 
+    if !errors.is_empty() {
+        eprintln!("error ocurred while logging for test");
+        for (index, error) in errors.iter().enumerate() {
+            eprintln!("{}: {}", index, error.to_string());
+        }
+        std::process::exit(1);
+    }
+
     // Start tonic server and wait forever.
     tonic::transport::Server::builder()
         .add_service(LoggerServiceServer::new(MyLoggerService::new(logger)))
         .add_service(PingServiceServer::new(MyPingService {}))
-        .serve("[::1]:50051".parse().unwrap())
+        .serve(
+            format!(
+                "{}:{}",
+                config.host.unwrap_or("[::1]".to_string()),
+                config.port.unwrap_or(50051)
+            )
+            .parse()
+            .unwrap(),
+        )
         .await
         .unwrap();
 }
