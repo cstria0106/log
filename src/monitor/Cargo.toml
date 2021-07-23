@@ -9,5 +9,9 @@ path = "src/main.rs"
 
 [dependencies]
 clap = "2.33"
+log = {path = "../log"}
 serde = "1.0"
+tokio = "1.8"
 toml = "0.5"
+toml-highlighter = {path = "../toml-highlighter"}
+tonic = "0.4"

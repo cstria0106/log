@@ -1069,8 +1069,12 @@ name = "log-monitor"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "log 0.1.0",
  "serde",
+ "tokio 1.8.1",
  "toml",
+ "toml-highlighter",
+ "tonic",
 ]
 
 [[package]]

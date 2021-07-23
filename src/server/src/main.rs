@@ -57,12 +57,14 @@ async fn main() {
         .add_device(Box::new(ConsoleDevice::new()));
 
     // Log for test.
-    logger.log(Log::new(
-        Level::Info,
-        &"Now starting logging server.".to_string(),
-        None,
-        Utc::now(),
-    )).await;
+    logger
+        .log(Log::new(
+            Level::Info,
+            &"Now starting logging server.".to_string(),
+            None,
+            Utc::now(),
+        ))
+        .await;
 
     // Start tonic server and wait forever.
     tonic::transport::Server::builder()

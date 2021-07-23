@@ -1,4 +1,4 @@
-use std::{fs, io::Read, process};
+use std::{fs, io::Read};
 
 use serde::Deserialize;
 
@@ -9,6 +9,14 @@ pub struct Config {
 }
 
 impl Config {
+    pub fn ip(&self) -> &String {
+        &self.ip
+    }
+
+    pub fn port(&self) -> &Option<u16> {
+        &self.port
+    }
+
     fn from_str(toml: &str) -> Result<Self, toml::de::Error> {
         toml::from_str(toml)
     }
