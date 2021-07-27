@@ -1,4 +1,4 @@
-use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+use clap::{App, AppSettings, Arg, ArgMatches};
 
 pub fn get_arguments() -> ArgMatches<'static> {
     App::new("Log Server")
