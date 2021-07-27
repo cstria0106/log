@@ -6,8 +6,10 @@ RUN rustup component add rustfmt
 RUN apk add openssl-dev
 RUN apk add build-base
 RUN apk add protoc
+RUN apk add git
 
 COPY . .
+RUN git submodule init && git submodule update
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/app/target \
