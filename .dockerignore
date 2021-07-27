@@ -1,4 +1,6 @@
 Dockerfile
+.dockerignore
 .git
 .gitignore
 .gitmodules
+/.*rc.toml
