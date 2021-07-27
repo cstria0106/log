@@ -23,4 +23,6 @@ WORKDIR /app
 RUN apk add libgcc
 
 COPY --from=BUILD /app/log-server .
+
+EXPOSE ${PORT}
 CMD ["./log-server"]
