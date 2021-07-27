@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub ip: String,
+    pub host: Option<String>,
     pub port: Option<u16>,
 }
 

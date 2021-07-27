@@ -9,8 +9,8 @@ use crate::config::Config;
 pub async fn follow(_: &ArgMatches<'_>, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     let mut client = LoggerServiceClient::connect(format!(
         "http://{}:{}",
-        config.ip,
-        config.port.unwrap_or(50051)
+        config.host.as_ref().unwrap_or(&"127.0.0.1".to_string()),
+        config.port.as_ref().unwrap_or(&50051)
     ))
     .await?;
 
