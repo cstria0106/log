@@ -11,8 +11,9 @@ use logger_rpc::MyLoggerService;
 use ping_rpc::MyPingService;
 use s3_device::S3Device;
 
-use crate::config::Config;
+use crate::{cli::get_arguments, config::Config};
 
+mod cli;
 mod config;
 #[path = "device/console_device.rs"]
 mod console_device;
@@ -27,13 +28,16 @@ mod s3_device;
 
 #[tokio::main]
 async fn main() {
-    let mut toml = String::new();
-    std::fs::File::open(".loggerrc.toml")
-        .expect("could not open config file")
-        .read_to_string(&mut toml)
-        .expect("could not read config file");
+    let args = get_arguments();
 
-    let config = Config::from_str(&toml).expect("could not parse config");
+    let config_file_path = args.value_of("config").unwrap();
+    let config = match Config::from_file(config_file_path) {
+        Err(e) => {
+            eprintln!("could not read config file '{}': {}", config_file_path, e);
+            std::process::exit(1);
+        }
+        Ok(c) => c,
+    };
 
     // Create logger.
     let mut logger = Logger::new()
@@ -69,7 +73,7 @@ async fn main() {
         .serve(
             format!(
                 "{}:{}",
-                config.host.unwrap_or("[::1]".to_string()),
+                config.host.unwrap_or("127.0.0.1".to_string()),
                 config.port.unwrap_or(50051)
             )
             .parse()

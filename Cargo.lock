@@ -644,6 +644,7 @@ dependencies = [
  "async-trait",
  "bincode",
  "chrono",
+ "clap",
  "flate2",
  "futures",
  "log 0.1.0",
