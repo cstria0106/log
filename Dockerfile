@@ -11,12 +11,14 @@ COPY . .
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/app/target \
-    RUSTFLAGS=-C target-feature=-crt-static; cargo build --release --bin log-server \
+    RUSTFLAGS="-C target-feature=-crt-static" cargo build --release --bin log-server \
     && cp target/release/log-server ./log-server
 
 # RUN
 FROM alpine:3.13 AS RUN
 WORKDIR /app
+
+RUN apk add libgcc
 
 COPY --from=BUILD /app/log-server .
 CMD ["./log-server"]

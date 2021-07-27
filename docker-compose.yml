@@ -1,0 +1,8 @@
+version: "3"
+
+services:
+  log:
+    container_name: log
+    build: .
+    volumes:
+      - ./.loggerrc.toml:/app/.loggerrc.toml
