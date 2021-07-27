@@ -1,5 +1,3 @@
-use std::io::Read;
-
 use chrono::Utc;
 use console_device::ConsoleDevice;
 use log::{
