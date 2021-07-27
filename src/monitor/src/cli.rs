@@ -11,7 +11,7 @@ pub fn get_arguments() -> ArgMatches<'static> {
                 .short("c")
                 .value_name("PATH")
                 .help("Specifies config file path")
-                .default_value("config.toml")
+                .default_value(".monitorrc.toml")
                 .takes_value(true),
         )
         .subcommand(

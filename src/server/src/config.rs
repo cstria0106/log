@@ -9,9 +9,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        // Load configuration from "config.json".
-        serde_json::from_reader(std::io::BufReader::new(std::fs::File::open(path)?))
-            .map_err(|e| e.to_string().into())
+    pub fn from_str(toml: &str) -> Result<Self, toml::de::Error> {
+        toml::from_str(toml)
     }
 }

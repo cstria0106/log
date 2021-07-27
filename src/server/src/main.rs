@@ -1,3 +1,5 @@
+use std::io::Read;
+
 use chrono::Utc;
 use console_device::ConsoleDevice;
 use log::{
@@ -25,7 +27,13 @@ mod s3_device;
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_file("config.json").expect("could not read config");
+    let mut toml = String::new();
+    std::fs::File::open(".loggerrc.toml")
+        .expect("could not open config file")
+        .read_to_string(&mut toml)
+        .expect("could not read config file");
+
+    let config = Config::from_str(&toml).expect("could not parse config");
 
     // Create logger.
     let mut logger = Logger::new()
