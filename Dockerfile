@@ -11,7 +11,7 @@ COPY . .
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/app/target \
-    cargo build --release --bin log-server \
+    RUSTFLAGS=-C target-feature=-crt-static; cargo build --release --bin log-server \
     && cp target/release/log-server ./log-server
 
 # RUN
