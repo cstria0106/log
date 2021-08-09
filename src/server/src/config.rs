@@ -8,6 +8,7 @@ pub struct Config {
     pub bucket: String,
     pub host: Option<String>,
     pub port: Option<u16>,
+    pub devices: Option<Vec<String>>,
 }
 
 impl Config {

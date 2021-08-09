@@ -9,7 +9,7 @@ use logger_rpc::MyLoggerService;
 use ping_rpc::MyPingService;
 use s3_device::S3Device;
 
-use crate::{cli::get_arguments, config::Config};
+use crate::{cli::get_arguments, config::Config, device::Device};
 
 mod cli;
 mod config;
@@ -37,14 +37,31 @@ async fn main() {
         Ok(c) => c,
     };
 
+    // Create devices.
+    let mut devices: Vec<Box<dyn Device + Send + Sync>> = Vec::new();
+
+    for device_name in config
+        .devices
+        .as_ref()
+        .unwrap_or(&vec!["console".to_string()])
+        .iter()
+        .map(|s| s.trim())
+    {
+        devices.push(match &device_name[..] {
+            "console" => Box::new(ConsoleDevice::new()),
+            "s3" => Box::new(
+                S3Device::new(&config)
+                    .await
+                    .expect("could not create S3 device"),
+            ),
+            _ => continue,
+        });
+    }
+
     // Create logger.
-    let mut logger = Logger::new()
-        .add_device(Box::new(
-            S3Device::new(&config)
-                .await
-                .expect("could not create S3 device"),
-        ))
-        .add_device(Box::new(ConsoleDevice::new()));
+    let mut logger = devices
+        .into_iter()
+        .fold(Logger::new(), |logger, device| logger.add_device(device));
 
     // Log for test.
     let errors = logger
