@@ -1,5 +1,7 @@
 use std::io::Read;
 
+use anyhow::{ensure, Context, Result};
+
 /// Configuration struct.
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Config {
@@ -12,32 +14,21 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_str(toml: &str) -> Result<Self, toml::de::Error> {
-        toml::from_str(toml)
+    pub fn from_str(toml: &str) -> Result<Self> {
+        toml::from_str(toml).map_err(|e| e.into())
     }
 
-    pub fn from_file(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let mut config_file = match std::fs::File::open(path) {
-            Ok(file) => file,
-            Err(e) => {
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    format!("could not open config file: {}", e),
-                )));
-            }
-        };
+    pub fn from_file(path: &str) -> Result<Self> {
+        let mut config_file = std::fs::File::open(path).context("failed to open config file")?;
 
         let metadata = config_file.metadata()?;
-        if !metadata.is_file() {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "it's not a valid file",
-            )));
-        }
+        ensure!(metadata.is_file(), "config file is not a file");
 
         let mut toml = String::new();
-        config_file.read_to_string(&mut toml)?;
+        config_file
+            .read_to_string(&mut toml)
+            .context("failed to read config file")?;
 
-        Self::from_str(&toml).map_err(|e| e.into())
+        Self::from_str(&toml)
     }
 }

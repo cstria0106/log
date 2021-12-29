@@ -1,8 +1,9 @@
+use anyhow::{bail, Context, Result};
 use chrono::Utc;
 use console_device::ConsoleDevice;
 use log::{
-    grpc::{logger_service_server::LoggerServiceServer, ping_service_server::PingServiceServer},
     log::{Level, Log},
+    proto::{logger_service_server::LoggerServiceServer, ping_service_server::PingServiceServer},
 };
 use logger::Logger;
 use logger_rpc::MyLoggerService;
@@ -25,17 +26,12 @@ mod ping_rpc;
 mod s3_device;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     let args = get_arguments();
 
+    // Load config.
     let config_file_path = args.value_of("config").unwrap();
-    let config = match Config::from_file(config_file_path) {
-        Err(e) => {
-            eprintln!("could not read config file '{}': {}", config_file_path, e);
-            std::process::exit(1);
-        }
-        Ok(c) => c,
-    };
+    let config = Config::from_file(config_file_path).context("Failed to load config file")?;
 
     // Create devices.
     let mut devices: Vec<Box<dyn Device + Send + Sync>> = Vec::new();
@@ -52,9 +48,9 @@ async fn main() {
             "s3" => Box::new(
                 S3Device::new(&config)
                     .await
-                    .expect("could not create S3 device"),
+                    .context("Could not create S3 device")?,
             ),
-            _ => continue,
+            _ => bail!("Unknown device: {}", device_name),
         });
     }
 
@@ -74,7 +70,7 @@ async fn main() {
         .await;
 
     if !errors.is_empty() {
-        eprintln!("error ocurred while logging for test");
+        eprintln!("Error ocurred while logging for test");
         for (index, error) in errors.iter().enumerate() {
             eprintln!("{}: {}", index, error.to_string());
         }
@@ -91,9 +87,9 @@ async fn main() {
                 config.host.unwrap_or("127.0.0.1".to_string()),
                 config.port.unwrap_or(50051)
             )
-            .parse()
-            .unwrap(),
+            .parse()?,
         )
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
 }

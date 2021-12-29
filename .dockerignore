@@ -1,6 +1,4 @@
 /target
 /.vscode
 /.*rc.toml
-
-Dockerfile
-.dockerignore
+/config.toml

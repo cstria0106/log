@@ -1,6 +1,7 @@
 use std::env;
 use std::io::prelude::*;
 
+use anyhow::{Context, Result};
 use async_trait::async_trait;
 use chrono::{Date, Utc};
 use flate2::Compression;
@@ -20,7 +21,7 @@ pub struct S3Device {
 }
 
 impl S3Device {
-    pub async fn new(config: &Config) -> Result<S3Device, Box<dyn std::error::Error>> {
+    pub async fn new(config: &Config) -> Result<S3Device> {
         // Get S3 bucket.
         env::set_var("AWS_ACCESS_KEY_ID", config.id.clone());
         env::set_var("AWS_SECRET_ACCESS_KEY", config.key.clone());
@@ -32,12 +33,13 @@ impl S3Device {
 
         let bucket = client
             .list_buckets()
-            .await?
+            .await
+            .context("Failed to list buckets")?
             .buckets
             .unwrap()
             .into_iter()
             .find(|bucket| bucket.name == Some(config.bucket.clone()))
-            .expect(&format!("no bucket named '{}'", config.bucket));
+            .context(format!("No bucket names '{}'", config.bucket))?;
 
         Ok(S3Device { client, bucket })
     }

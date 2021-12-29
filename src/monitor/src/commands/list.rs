@@ -32,7 +32,7 @@ pub async fn list(
 
     let highlighter = toml_highlighter::Highlighter::new();
     let mut buffer = String::new();
-    for log in logs.iter().map(|log| Log::from_grpc_log(log)) {
+    for log in logs.iter().map(|log| Log::from_proto_log(log)) {
         match log {
             Ok(log) => buffer.push_str(&log.to_pretty_string(&highlighter)),
             Err(e) => buffer.push_str(&format!("invalid log: {}", e)),

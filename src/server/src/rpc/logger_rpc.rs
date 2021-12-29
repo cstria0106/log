@@ -1,11 +1,11 @@
 use crate::logger::Logger;
 use chrono::{NaiveDate, TimeZone, Utc};
 use log::{
-    grpc::{
+    log::Log,
+    proto::{
         logger_service_server::LoggerService, FollowResponse, GetRequest, GetResponse, LogRequest,
         LogResponse,
     },
-    log::Log,
 };
 use std::{pin::Pin, sync::Arc};
 use tokio::sync::Mutex;
@@ -39,7 +39,7 @@ impl LoggerService for MyLoggerService {
         };
 
         let log =
-            Log::from_grpc_log(log).map_err(|_| tonic::Status::invalid_argument("bad format"))?;
+            Log::from_proto_log(log).map_err(|_| tonic::Status::invalid_argument("bad format"))?;
 
         // Log.
         self.logger.lock().await.log(log).await;
@@ -70,18 +70,19 @@ impl LoggerService for MyLoggerService {
             .await
             .get(&date, None)
             .await
-            .map(|logs| logs.iter().map(|log| log.to_grpc_log()).collect())
+            .map(|logs| logs.iter().map(|log| log.to_proto_log()).collect())
             .unwrap_or(Vec::new());
 
         Ok(tonic::Response::new(GetResponse { logs }))
     }
 
-    type FollowStream =
-        Pin<Box<dyn Stream<Item = Result<log::grpc::FollowResponse, tonic::Status>> + Send + Sync>>;
+    type FollowStream = Pin<
+        Box<dyn Stream<Item = Result<log::proto::FollowResponse, tonic::Status>> + Send + Sync>,
+    >;
 
     async fn follow(
         &self,
-        _: tonic::Request<log::grpc::FollowRequest>,
+        _: tonic::Request<log::proto::FollowRequest>,
     ) -> Result<tonic::Response<Self::FollowStream>, tonic::Status> {
         // Create follower.
         let (sender, receiver) = tokio::sync::mpsc::channel(4);
@@ -93,7 +94,7 @@ impl LoggerService for MyLoggerService {
         Ok(tonic::Response::new(Box::pin(
             ReceiverStream::new(receiver).map(|log| {
                 Ok(FollowResponse {
-                    log: Some(log.to_grpc_log()),
+                    log: Some(log.to_proto_log()),
                 })
             }),
         )))

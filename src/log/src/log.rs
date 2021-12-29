@@ -38,13 +38,13 @@ pub struct Log {
 }
 
 impl Log {
-    pub fn from_grpc_log(log: &crate::grpc::Log) -> Result<Self, ParseError> {
+    pub fn from_proto_log(log: &crate::proto::Log) -> Result<Self, ParseError> {
         Ok(Self::new(
             match &log.level() {
-                crate::grpc::Level::Info => Level::Info,
-                crate::grpc::Level::Warning => Level::Warning,
-                crate::grpc::Level::Error => Level::Error,
-                crate::grpc::Level::Debug => Level::Debug,
+                crate::proto::Level::Info => Level::Info,
+                crate::proto::Level::Warning => Level::Warning,
+                crate::proto::Level::Error => Level::Error,
+                crate::proto::Level::Debug => Level::Debug,
             },
             &log.message,
             if log.other.len() > 0 {
@@ -57,8 +57,8 @@ impl Log {
         ))
     }
 
-    pub fn to_grpc_log(&self) -> crate::grpc::Log {
-        crate::grpc::Log {
+    pub fn to_proto_log(&self) -> crate::proto::Log {
+        crate::proto::Log {
             level: match self.level {
                 Level::Info => 0,
                 Level::Warning => 1,

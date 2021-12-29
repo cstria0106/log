@@ -19,7 +19,7 @@ pub async fn follow(_: &ArgMatches<'_>, config: &Config) -> Result<(), Box<dyn s
 
     while let Some(message) = stream.message().await? {
         if let Some(log) = message.log {
-            let log = Log::from_grpc_log(&log)?;
+            let log = Log::from_proto_log(&log)?;
             println!("{}", log.to_pretty_string(&highlighter));
         }
     }

@@ -1,3 +1,4 @@
 /target
 /.vscode
 /.*rc.toml
+/config.toml
