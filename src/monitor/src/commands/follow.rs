@@ -1,7 +1,7 @@
 use clap::ArgMatches;
 use log::{
-    grpc::{logger_service_client::LoggerServiceClient, FollowRequest},
     log::Log,
+    proto::{logger_service_client::LoggerServiceClient, FollowRequest},
 };
 
 use crate::config::Config;

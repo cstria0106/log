@@ -1,8 +1,8 @@
 use chrono::NaiveDate;
 use clap::ArgMatches;
 use log::{
-    grpc::{logger_service_client::LoggerServiceClient, GetRequest},
     log::Log,
+    proto::{logger_service_client::LoggerServiceClient, GetRequest},
 };
 
 use crate::config::Config;
